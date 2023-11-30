@@ -17,7 +17,7 @@ type_dict = {'vehicle_id': 'int32',
              'RS_T_OilTemp_PC2':'float64'}
 
 
-def correct_column_types(dataframe, column_types):
+def correct_column_types(dataframe, column_types=type_dict):
     """
     Corrects the type of each column in a DataFrame based on the specified types in the dictionary.
 
