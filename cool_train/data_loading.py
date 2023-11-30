@@ -17,7 +17,7 @@ type_dict = {'vehicle_id': 'int32',
              'RS_T_OilTemp_PC2':'float64'}
 
 
-def correct_column_types(dataframe, column_types=type_dict):
+def correct_column_types(dataframe, column_types):
     """
     Corrects the type of each column in a DataFrame based on the specified types in the dictionary.
 
@@ -34,11 +34,13 @@ def correct_column_types(dataframe, column_types=type_dict):
         if column in corrected_dataframe.columns:
             # Removing non-numeric columns
             if desired_type != 'datetime64[ns]':
-                corrected_dataframe[column] = pd.to_numeric(corrected_dataframe[column], errors='coerce')
+                # Transform to string, then replace the comas with point
+                corrected_dataframe[column] = corrected_dataframe[column].astype(str).str.replace(',', '.', regex=False)
+                # Change all values to numeric
+                corrected_dataframe[column] = pd.to_numeric(corrected_dataframe[column])   
                 
             # Format right dtype                
             corrected_dataframe[column] = corrected_dataframe[column].astype(desired_type)
                 
     return corrected_dataframe
-
 
