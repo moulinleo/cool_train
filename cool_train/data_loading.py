@@ -1,20 +1,8 @@
 import pandas as pd
 
 
-type_dict = {'vehicle_id': 'int32',
-             'timestamps_UTC': 'datetime64[ns]', 
-             'lat':'float64',
-             'lon': 'float64',
-             'RS_E_InAirTemp_PC1':'float64',
-             'RS_E_InAirTemp_PC2':'float64', 
-             'RS_E_OilPress_PC1':'float64',
-             'RS_E_OilPress_PC2':'float64', 
-             'RS_E_RPM_PC1':'float64',
-             'RS_E_RPM_PC2':'float64', 
-             'RS_E_WatTemp_PC1':'float64',
-             'RS_E_WatTemp_PC2':'float64', 
-             'RS_T_OilTemp_PC1':'float64', 
-             'RS_T_OilTemp_PC2':'float64'}
+type_dict = {'vehicle_id': 'int32', 
+             'timestamps_UTC': 'datetime64[ns]'}
 
 
 def correct_column_types(dataframe, column_types=type_dict):
@@ -30,17 +18,25 @@ def correct_column_types(dataframe, column_types=type_dict):
     """
     corrected_dataframe = dataframe.copy()
 
-    for column, desired_type in column_types.items():
-        if column in corrected_dataframe.columns:
-            # Removing non-numeric columns
-            if desired_type != 'datetime64[ns]':
-                # Transform to string, then replace the comas with point
-                corrected_dataframe[column] = corrected_dataframe[column].astype(str).str.replace(',', '.', regex=False)
-                # Change all values to numeric
-                corrected_dataframe[column] = pd.to_numeric(corrected_dataframe[column])   
-                
-            # Format right dtype                
-            corrected_dataframe[column] = corrected_dataframe[column].astype(desired_type)
-                
+    for column in corrected_dataframe.columns:
+        # Default type is float64
+        desired_type = 'float64'
+        
+        # Check if a different type is specified in the dictionary
+        if column in column_types:
+            desired_type = column_types[column]
+
+        if desired_type == 'datetime64[ns]':
+            # Convert to datetime
+            corrected_dataframe[column] = pd.to_datetime(corrected_dataframe[column], errors='coerce')
+        
+        else:
+            # Convert to string, replace commas with points, and convert to numeric
+            corrected_dataframe[column] = pd.to_numeric(corrected_dataframe[column].astype(str).str.replace(',', '.', regex=False), errors='coerce')
+        
+        # Convert to the desired type
+        corrected_dataframe[column] = corrected_dataframe[column].astype(desired_type)
+    
     return corrected_dataframe
+
 
