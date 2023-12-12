@@ -26,14 +26,18 @@ def add_time_features(df, timestamp_column_UTC='timestamps_UTC'):
 
     # Extract time-related features
     df['month'] = df[timestamp_column].dt.month
-    df['day'] = df[timestamp_column].dt.day
+    # df['day'] = df[timestamp_column].dt.day
     df['hour'] = df[timestamp_column].dt.hour
-    df['minute'] = df[timestamp_column].dt.minute
-    df['second'] = df[timestamp_column].dt.second
+    # df['minute'] = df[timestamp_column].dt.minute
+    # df['second'] = df[timestamp_column].dt.second
     df['dayOfWeek'] = df[timestamp_column].dt.dayofweek
-    df['isWeekend'] = df[timestamp_column].dt.weekday >= 5  # 5 and 6 correspond to Saturday and Sunday
+    # df['isWeekend'] = df[timestamp_column].dt.weekday >= 5  # 5 and 6 correspond to Saturday and Sunday
+    #df['isWeekend'] = df['isWeekend'].astype(int)
     df['quarter'] = df[timestamp_column].dt.quarter
-    df['timeOfDay'] = pd.cut(df['hour'], bins=[0, 6, 12, 18, 24], labels=['Night', 'Morning', 'Afternoon', 'Evening'])
+    # labels=['Night', 'Morning', 'Afternoon', 'Evening']
+    df['timeOfDay'] = pd.cut(df['hour'], bins=[0, 6, 12, 18, 24], labels=[0,1,2,3], right=False, include_lowest=True)
+    
+    df = df.drop('timestamps_local', axis=1)
 
     return df
 
@@ -125,3 +129,17 @@ def compute_spatial_features(df, lat_col='lat', lon_col='lon', time_col='timesta
     df = df.drop(['TimeDiff'], axis=1)
 
     return df
+
+
+
+# Create Regimes
+def create_regimes(df_time):
+    # Create a new 'Regime' column based on the specified conditions
+    df_time['Regime'] = 'Other Case'
+    df_time.loc[(df_time['RS_E_RPM_PC1'] >= 790) & (df_time['RS_E_RPM_PC1'] <= 810) & (df_time['RS_E_RPM_PC2'] >= 790) & (df_time['RS_E_RPM_PC2'] <= 810), 'Regime'] = 'Cruising'
+    df_time.loc[(df_time['RS_E_RPM_PC1'] > 810) & (df_time['RS_E_RPM_PC2'] > 810), 'Regime'] = 'High Speed'
+    df_time.loc[((df_time['RS_E_RPM_PC1'] >= 790) & (df_time['RS_E_RPM_PC1'] <= 810) & (df_time['RS_E_RPM_PC2'] < 790)) | ((df_time['RS_E_RPM_PC2'] >= 790) & (df_time['RS_E_RPM_PC2'] <= 810) & (df_time['RS_E_RPM_PC1'] < 790)), 'Regime'] = 'One Engine Decelerating'
+    df_time.loc[((df_time['RS_E_RPM_PC1'] >= 790) & (df_time['RS_E_RPM_PC1'] <= 810) & (df_time['RS_E_RPM_PC2'] > 810)) | ((df_time['RS_E_RPM_PC2'] >= 790) & (df_time['RS_E_RPM_PC2'] <= 810) & (df_time['RS_E_RPM_PC1'] > 810)), 'Regime'] = 'One Engine Accelerating'
+    df_time.loc[(df_time['RS_E_RPM_PC1'] < 790) & (df_time['RS_E_RPM_PC1'] > 10) & (df_time['RS_E_RPM_PC2'] < 790) & (df_time['RS_E_RPM_PC2'] > 10), 'Regime'] = 'Both Engine Deccelerating'
+    df_time.loc[(df_time['RS_E_RPM_PC1'] < 10) & (df_time['RS_E_RPM_PC2'] < 10), 'Regime'] = 'Stopped'
+    return df_time
