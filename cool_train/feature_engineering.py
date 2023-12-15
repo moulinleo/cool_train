@@ -33,7 +33,7 @@ def add_time_features(df, timestamp_column_UTC='timestamps_UTC'):
     df['dayOfWeek'] = df[timestamp_column].dt.dayofweek
     # df['isWeekend'] = df[timestamp_column].dt.weekday >= 5  # 5 and 6 correspond to Saturday and Sunday
     #df['isWeekend'] = df['isWeekend'].astype(int)
-    df['quarter'] = df[timestamp_column].dt.quarter
+    # df['quarter'] = df[timestamp_column].dt.quarter # --> too correlated with the month variable (94%) (REMOVE IT)
     # labels=['Night', 'Morning', 'Afternoon', 'Evening']
     df['timeOfDay'] = pd.cut(df['hour'], bins=[0, 6, 12, 18, 24], labels=[0,1,2,3], right=False, include_lowest=True)
     
@@ -143,3 +143,28 @@ def create_regimes(df_time):
     df_time.loc[(df_time['RS_E_RPM_PC1'] < 790) & (df_time['RS_E_RPM_PC1'] > 10) & (df_time['RS_E_RPM_PC2'] < 790) & (df_time['RS_E_RPM_PC2'] > 10), 'Regime'] = 'Both Engine Deccelerating'
     df_time.loc[(df_time['RS_E_RPM_PC1'] < 10) & (df_time['RS_E_RPM_PC2'] < 10), 'Regime'] = 'Stopped'
     return df_time
+
+
+
+def add_lagged_features(df, variables, lags):
+    """
+    Add lagged features to the DataFrame for selected variables and lag values.
+
+    Parameters:
+    - df: pandas DataFrame
+    - variables: list of variable names
+    - lags: list of lag values
+
+    Returns:
+    - df: pandas DataFrame with added lagged features
+    """
+    for variable in variables:
+        for lag in lags:
+            new_column_name = f'{variable}_lag{lag}'
+            shift_col = df[variable].shift(lag)
+            
+            # Compute the difference only if the lagged value is not NaN
+            df[f'{variable}_diff_lag{lag}'] = df[variable] - shift_col
+            df[f'{variable}_diff_lag{lag}'].loc[shift_col.isna()] = pd.NA  # set to NaN if lagged value is NaN
+
+    return df
